@@ -17,15 +17,26 @@ export function AuthProvider({ children }) {
         return
       }
       const email = firebaseUser.email?.toLowerCase()
-      const authDoc = await getDoc(doc(db, 'usuariosAutorizados', email))
-      if (!authDoc.exists()) {
+      try {
+        const authDoc = await getDoc(doc(db, 'usuariosAutorizados', email))
+        if (!authDoc.exists()) {
+          await signOut(auth)
+          setUser(null)
+          setStatus('unauthorized')
+          return
+        }
+        setUser(firebaseUser)
+        setStatus('authorized')
+      } catch (err) {
+        // Si el email todavía no está en la whitelist, las reglas de
+        // Firestore devuelven permission-denied en vez de "no existe" —
+        // sin este catch la pantalla se quedaba trabada en "Cargando…"
+        // para siempre en vez de mostrar el mensaje de no autorizado.
+        console.error(err)
         await signOut(auth)
         setUser(null)
         setStatus('unauthorized')
-        return
       }
-      setUser(firebaseUser)
-      setStatus('authorized')
     })
   }, [])
 
