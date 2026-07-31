@@ -1,16 +1,24 @@
-# React + Vite
+# Trazabilidad Pariggi / Pollo Cocido
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App interna de trazabilidad de entregas para Pastas Pariggi (cliente Cedisur) y Pollo Cocido (cliente Grandwich).
 
-Currently, two official plugins are available:
+Ver el diseño completo en [`docs/superpowers/specs/2026-07-31-trazabilidad-design.md`](docs/superpowers/specs/2026-07-31-trazabilidad-design.md) y el plan de implementación en [`docs/superpowers/plans/2026-07-31-trazabilidad-implementation.md`](docs/superpowers/plans/2026-07-31-trazabilidad-implementation.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Desarrollo local
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Requiere un archivo `.env.local` con las variables `VITE_FIREBASE_*` (ver `.env.example`) — pedirle el archivo a Imanol, no se sube al repo.
 
-## Expanding the Oxlint configuration
+## Tests
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+npm test
+```
+
+## Deploy
+
+Automático a GitHub Pages en cada push a `main` (`.github/workflows/deploy.yml`). Los secrets `VITE_FIREBASE_*` deben estar configurados en el repo de GitHub (Settings → Secrets and variables → Actions).
