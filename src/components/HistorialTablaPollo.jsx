@@ -4,6 +4,13 @@ function toDate(value) {
   return value?.toDate ? value.toDate() : value
 }
 
+// adjuntoUrl viene de Firestore, no del propio flujo de subida — solo se
+// renderiza como link si apunta al bucket real de Storage, para no quedar
+// expuestos a un href tipo javascript: cargado por otra vía.
+function esUrlDeStorageValida(url) {
+  return typeof url === 'string' && url.startsWith('https://firebasestorage.googleapis.com/')
+}
+
 export default function HistorialTablaPollo({ entregas }) {
   return (
     <div className="bg-white rounded-xl shadow overflow-x-auto">
@@ -29,7 +36,7 @@ export default function HistorialTablaPollo({ entregas }) {
               <td className="px-4 py-2">{e.dias}</td>
               <td className="px-4 py-2">{e.meses}</td>
               <td className="px-4 py-2">
-                {e.adjuntoUrl ? (
+                {esUrlDeStorageValida(e.adjuntoUrl) ? (
                   <a href={e.adjuntoUrl} target="_blank" rel="noreferrer" className="text-pollo hover:underline">Ver</a>
                 ) : (
                   <span className="text-gray-400">Sin adjunto</span>

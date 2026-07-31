@@ -15,9 +15,14 @@ service cloud.firestore {
     }
 
     match /entregas/{entregaId} {
-      allow read, update, delete: if isAuthorized();
+      allow read, delete: if isAuthorized();
       allow create: if isAuthorized() &&
         request.resource.data.creadoPor == request.auth.token.email;
+      // Solo el paso de adjuntar el permiso de tránsito actualiza un registro
+      // ya creado — cualquier otro campo (creadoPor, fechas, etc.) queda fijo
+      // después de crearse, para que el registro de auditoría no se pueda alterar.
+      allow update: if isAuthorized() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adjuntoUrl', 'adjuntoNombre']);
     }
   }
 }
