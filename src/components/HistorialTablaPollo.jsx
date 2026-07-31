@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
+import { adjuntarArchivo } from '../services/entregas'
+
+const MAX_BYTES = 15 * 1024 * 1024
 
 function toDate(value) {
   return value?.toDate ? value.toDate() : value
@@ -11,7 +15,42 @@ function esUrlDeStorageValida(url) {
   return typeof url === 'string' && url.startsWith('https://firebasestorage.googleapis.com/')
 }
 
-export default function HistorialTablaPollo({ entregas }) {
+function AdjuntarInline({ entregaId, onAdjuntado }) {
+  const [subiendo, setSubiendo] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_BYTES) {
+      setError('Pesa más de 15 MB')
+      return
+    }
+    setError('')
+    setSubiendo(true)
+    try {
+      await adjuntarArchivo(entregaId, file)
+      onAdjuntado?.()
+    } catch (err) {
+      setError('No se pudo subir')
+      console.error(err)
+    } finally {
+      setSubiendo(false)
+    }
+  }
+
+  return (
+    <div>
+      <label className="text-xs text-pollo hover:underline cursor-pointer">
+        {subiendo ? 'Subiendo…' : 'Adjuntar'}
+        <input type="file" accept="application/pdf,image/*" onChange={handleChange} disabled={subiendo} className="hidden" />
+      </label>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+export default function HistorialTablaPollo({ entregas, onChange }) {
   return (
     <div className="bg-white rounded-xl shadow overflow-x-auto">
       <table className="w-full text-sm">
@@ -39,7 +78,7 @@ export default function HistorialTablaPollo({ entregas }) {
                 {esUrlDeStorageValida(e.adjuntoUrl) ? (
                   <a href={e.adjuntoUrl} target="_blank" rel="noreferrer" className="text-pollo hover:underline">Ver</a>
                 ) : (
-                  <span className="text-gray-400">Sin adjunto</span>
+                  <AdjuntarInline entregaId={e.id} onAdjuntado={onChange} />
                 )}
               </td>
             </tr>

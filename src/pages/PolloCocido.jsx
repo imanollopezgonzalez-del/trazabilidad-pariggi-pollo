@@ -17,7 +17,7 @@ export default function PolloCocido() {
       <h1 className="text-xl font-semibold text-dark">Pollo Cocido — Grandwich</h1>
       <EntregaFormPollo onSaved={reload} />
       <h2 className="font-medium text-dark">Historial</h2>
-      <HistorialTablaPollo entregas={entregas} />
+      <HistorialTablaPollo entregas={entregas} onChange={reload} />
     </div>
   )
 }

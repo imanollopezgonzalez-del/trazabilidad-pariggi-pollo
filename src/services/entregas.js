@@ -32,19 +32,29 @@ export async function crearEntregaPariggi(datos) {
   return crearEntregaBase('pariggi', { ...datos, cliente: datos.cliente ?? 'Cedisur' })
 }
 
+async function subirAdjunto(entregaId, archivo) {
+  const path = `permisos/pollococido/${entregaId}/${archivo.name}`
+  const fileRef = ref(storage, path)
+  await uploadBytes(fileRef, archivo)
+  const url = await getDownloadURL(fileRef)
+  await updateDoc(doc(db, 'entregas', entregaId), {
+    adjuntoUrl: url,
+    adjuntoNombre: archivo.name,
+  })
+}
+
 export async function crearEntregaPollo(datos) {
   const entregaId = await crearEntregaBase('pollococido', { ...datos, cliente: datos.cliente ?? 'Grandwich' })
   if (datos.archivo) {
-    const path = `permisos/pollococido/${entregaId}/${datos.archivo.name}`
-    const fileRef = ref(storage, path)
-    await uploadBytes(fileRef, datos.archivo)
-    const url = await getDownloadURL(fileRef)
-    await updateDoc(doc(db, 'entregas', entregaId), {
-      adjuntoUrl: url,
-      adjuntoNombre: datos.archivo.name,
-    })
+    await subirAdjunto(entregaId, datos.archivo)
   }
   return entregaId
+}
+
+// Para cuando el operador cargó la entrega sin el escaneo todavía y lo
+// adjunta más tarde desde el historial.
+export async function adjuntarArchivo(entregaId, archivo) {
+  await subirAdjunto(entregaId, archivo)
 }
 
 // Sin orderBy en la query: un where + orderBy sobre campos distintos exige un

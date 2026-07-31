@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { seedCatalogoSiVacio } from './services/productos'
 import Login from './pages/Login'
@@ -25,7 +25,7 @@ function Gate() {
     return <Login />
   }
   return (
-    <BrowserRouter basename="/trazabilidad-pariggi-pollo">
+    <HashRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Empresas />} />
@@ -34,7 +34,7 @@ function Gate() {
           <Route path="/ajustes" element={<Ajustes />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
