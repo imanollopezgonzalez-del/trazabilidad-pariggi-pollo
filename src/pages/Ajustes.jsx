@@ -75,7 +75,7 @@ export default function Ajustes() {
           ))}
         </ul>
         <form onSubmit={handleAddUsuario} className="flex gap-2 mt-3">
-          <input type="email" placeholder="email@dominio.com" value={nuevoEmail} onChange={(e) => setNuevoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm flex-1" />
+          <input type="email" required placeholder="email@dominio.com" value={nuevoEmail} onChange={(e) => setNuevoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm flex-1" />
           <button type="submit" className="bg-dark text-white rounded-lg px-4 text-sm">Agregar</button>
         </form>
       </section>
