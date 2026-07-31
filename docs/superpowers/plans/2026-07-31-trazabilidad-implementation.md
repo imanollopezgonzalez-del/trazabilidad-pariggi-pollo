@@ -233,7 +233,7 @@ describe('calcDiasMeses', () => {
   })
 
   it('calcula 608 dias y 20.3 meses (fila real: Sorrentinos de Jamon y Queso, planilla Cedisur)', () => {
-    const { dias, meses } = calcDiasMeses(new Date(2024, 5, 12), new Date(2026, 9, 2))
+    const { dias, meses } = calcDiasMeses(new Date(2024, 5, 12), new Date(2026, 1, 10))
     expect(dias).toBe(608)
     expect(meses).toBe(20.3)
   })
