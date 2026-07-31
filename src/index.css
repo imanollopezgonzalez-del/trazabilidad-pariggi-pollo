@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FAF8F5;
+  --color-dark: #1C1917;
+  --color-orange: #D97757;
+  --color-pollo: #C97A2B;
+}
+
+body {
+  @apply bg-cream text-dark;
+  margin: 0;
+}
