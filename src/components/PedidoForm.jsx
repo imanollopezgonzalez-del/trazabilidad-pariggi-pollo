@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { calcDiasMeses } from '../lib/trazabilidad'
 import { listProductos } from '../services/productos'
 import { crearPedido } from '../services/pedidos'
@@ -18,6 +18,7 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
   const [archivos, setArchivos] = useState([])
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     listProductos(empresa).then((items) =>
@@ -38,14 +39,19 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
   }
 
   function handleArchivos(e) {
-    const files = Array.from(e.target.files ?? [])
-    const grandes = files.filter((f) => f.size > MAX_BYTES)
+    const nuevos = Array.from(e.target.files ?? [])
+    e.target.value = '' // permite volver a elegir el mismo archivo si lo saca y lo agrega de nuevo
+    const grandes = nuevos.filter((f) => f.size > MAX_BYTES)
     if (grandes.length > 0) {
-      setError(`${grandes.length === 1 ? 'Un archivo pesa' : 'Algunos archivos pesan'} más de 15 MB y no se van a subir.`)
+      setError(`${grandes.length === 1 ? 'Un archivo pesa' : 'Algunos archivos pesan'} más de 15 MB y no se agregó.`)
     } else {
       setError('')
     }
-    setArchivos(files.filter((f) => f.size <= MAX_BYTES))
+    setArchivos((prev) => [...prev, ...nuevos.filter((f) => f.size <= MAX_BYTES)])
+  }
+
+  function quitarArchivo(index) {
+    setArchivos((prev) => prev.filter((_, i) => i !== index))
   }
 
   const filasCalculadas = filas.map((f) => {
@@ -184,9 +190,32 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
 
       {permiteAdjuntos && (
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Permisos de tránsito (PDF o foto, uno o varios)</label>
-          <input type="file" accept="application/pdf,image/*" multiple onChange={handleArchivos} className="w-full text-sm" />
-          {archivos.length > 0 && <p className="text-xs text-gray-500 mt-1">{archivos.length} archivo(s) seleccionado(s)</p>}
+          <label className="block text-sm font-medium text-gray-600 mb-1">Permisos de tránsito (PDF o foto)</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,image/*"
+            multiple
+            onChange={handleArchivos}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white"
+          >
+            + Agregar documentos
+          </button>
+          {archivos.length > 0 && (
+            <ul className="mt-2 grid gap-1">
+              {archivos.map((f, i) => (
+                <li key={`${f.name}-${i}`} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5">
+                  <span className="truncate">{f.name}</span>
+                  <button type="button" onClick={() => quitarArchivo(i)} className="text-red-500 hover:text-red-700 ml-3 shrink-0">✕</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

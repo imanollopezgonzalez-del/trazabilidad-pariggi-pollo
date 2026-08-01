@@ -32,12 +32,12 @@ function Gate() {
           <Route path="/pariggi" element={<ClienteSelector empresa="pariggi" />} />
           <Route
             path="/pariggi/:clienteId"
-            element={<Pedidos empresa="pariggi" permiteLote={false} permiteAdjuntos={false} mostrarExportarPdf={true} />}
+            element={<Pedidos empresa="pariggi" permiteLote={false} permiteAdjuntos={false} />}
           />
           <Route path="/pollococido" element={<ClienteSelector empresa="pollococido" />} />
           <Route
             path="/pollococido/:clienteId"
-            element={<Pedidos empresa="pollococido" permiteLote={true} permiteAdjuntos={true} mostrarExportarPdf={false} />}
+            element={<Pedidos empresa="pollococido" permiteLote={true} permiteAdjuntos={true} />}
           />
           <Route path="/ajustes" element={<Ajustes />} />
         </Route>

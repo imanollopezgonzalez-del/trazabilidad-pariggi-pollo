@@ -3,7 +3,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 import { db, storage } from '../firebase'
 
 const pedidosRef = collection(db, 'pedidos')
-const UPLOAD_TIMEOUT_MS = 15000
+const UPLOAD_TIMEOUT_MS = 8000
 
 function toMillis(value) {
   return value?.toDate ? value.toDate().getTime() : value.getTime()

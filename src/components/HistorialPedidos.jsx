@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { adjuntarArchivo, eliminarPedido } from '../services/pedidos'
+import { exportPedidoPdf } from '../utils/pdfExportPedido'
 import { useAuth } from '../contexts/AuthContext'
 
 const MAX_BYTES = 15 * 1024 * 1024
@@ -73,11 +74,16 @@ export default function HistorialPedidos({ empresa, pedidos, permiteLote, permit
               </span>
               <span className="text-sm text-gray-500 ml-3">{p.creadoPor}</span>
             </div>
-            {isAdmin && (
-              <button onClick={() => handleEliminar(p)} className="text-xs text-red-500 hover:underline">
-                Eliminar pedido
+            <div className="flex items-center gap-4">
+              <button onClick={() => exportPedidoPdf(empresa, p, permiteLote)} className="text-xs text-orange hover:underline">
+                Exportar PDF
               </button>
-            )}
+              {isAdmin && (
+                <button onClick={() => handleEliminar(p)} className="text-xs text-red-500 hover:underline">
+                  Eliminar pedido
+                </button>
+              )}
+            </div>
           </div>
 
           <table className="w-full text-sm">

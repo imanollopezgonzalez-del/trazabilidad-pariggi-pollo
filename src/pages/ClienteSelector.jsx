@@ -22,7 +22,8 @@ export default function ClienteSelector({ empresa }) {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-dark mb-4">{NOMBRES_EMPRESA[empresa]} — Elegir cliente</h1>
+      <Link to="/" className="text-sm text-gray-500 hover:underline">← Volver a empresas</Link>
+      <h1 className="text-xl font-semibold text-dark mb-4 mt-2">{NOMBRES_EMPRESA[empresa]} — Elegir cliente</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
         {clientes.map((c) => (
           <Link

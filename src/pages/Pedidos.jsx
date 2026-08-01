@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { listClientes } from '../services/clientes'
 import { listPedidos } from '../services/pedidos'
 import PedidoForm from '../components/PedidoForm'
 import HistorialPedidos from '../components/HistorialPedidos'
-import { exportPariggiPdf } from '../utils/pdfExportPariggi'
 
-export default function Pedidos({ empresa, permiteLote, permiteAdjuntos, mostrarExportarPdf }) {
+export default function Pedidos({ empresa, permiteLote, permiteAdjuntos }) {
   const { clienteId } = useParams()
   const [clienteNombre, setClienteNombre] = useState('')
   const [pedidos, setPedidos] = useState([])
@@ -27,19 +26,10 @@ export default function Pedidos({ empresa, permiteLote, permiteAdjuntos, mostrar
 
   return (
     <div className="grid gap-6">
+      <Link to={`/${empresa}`} className="text-sm text-gray-500 hover:underline">← Volver a clientes</Link>
       <h1 className="text-xl font-semibold text-dark">{clienteNombre}</h1>
       <PedidoForm empresa={empresa} cliente={clienteNombre} permiteLote={permiteLote} permiteAdjuntos={permiteAdjuntos} onSaved={reload} />
-      <div className="flex justify-between items-center">
-        <h2 className="font-medium text-dark">Pedidos cargados</h2>
-        {mostrarExportarPdf && (
-          <button
-            onClick={() => exportPariggiPdf(pedidos, clienteNombre)}
-            className="text-sm bg-dark text-white rounded-lg px-4 py-2"
-          >
-            Exportar PDF
-          </button>
-        )}
-      </div>
+      <h2 className="font-medium text-dark">Pedidos cargados</h2>
       <HistorialPedidos empresa={empresa} pedidos={pedidos} permiteLote={permiteLote} permiteAdjuntos={permiteAdjuntos} onChange={reload} />
     </div>
   )
