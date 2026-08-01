@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { calcDiasMeses } from '../lib/trazabilidad'
 import { listProductos } from '../services/productos'
 import { crearPedido } from '../services/pedidos'
+import { elegirDocumentosDeDrive } from '../utils/drivePicker'
 import { useAuth } from '../contexts/AuthContext'
 
-const MAX_BYTES = 15 * 1024 * 1024
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+const GOOGLE_DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID
 
 function filaVacia() {
   return { key: crypto.randomUUID(), productoId: '', lote: '', fechaEntrega: '', fechaVencimiento: '' }
@@ -15,10 +18,10 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
   const [productos, setProductos] = useState([])
   const [numeroFactura, setNumeroFactura] = useState('')
   const [filas, setFilas] = useState([filaVacia()])
-  const [archivos, setArchivos] = useState([])
+  const [documentos, setDocumentos] = useState([])
+  const [eligiendo, setEligiendo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
-  const fileInputRef = useRef(null)
 
   useEffect(() => {
     listProductos(empresa).then((items) =>
@@ -38,20 +41,26 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
     setFilas((prev) => (prev.length > 1 ? prev.filter((f) => f.key !== key) : prev))
   }
 
-  function handleArchivos(e) {
-    const nuevos = Array.from(e.target.files ?? [])
-    e.target.value = '' // permite volver a elegir el mismo archivo si lo saca y lo agrega de nuevo
-    const grandes = nuevos.filter((f) => f.size > MAX_BYTES)
-    if (grandes.length > 0) {
-      setError(`${grandes.length === 1 ? 'Un archivo pesa' : 'Algunos archivos pesan'} más de 15 MB y no se agregó.`)
-    } else {
-      setError('')
+  async function handleElegirDocumentos() {
+    setError('')
+    setEligiendo(true)
+    try {
+      const elegidos = await elegirDocumentosDeDrive({
+        apiKey: GOOGLE_API_KEY,
+        clientId: GOOGLE_CLIENT_ID,
+        folderId: GOOGLE_DRIVE_FOLDER_ID,
+      })
+      setDocumentos((prev) => [...prev, ...elegidos])
+    } catch (err) {
+      setError('No se pudo abrir el selector de Google Drive. Probá de nuevo.')
+      console.error(err)
+    } finally {
+      setEligiendo(false)
     }
-    setArchivos((prev) => [...prev, ...nuevos.filter((f) => f.size <= MAX_BYTES)])
   }
 
-  function quitarArchivo(index) {
-    setArchivos((prev) => prev.filter((_, i) => i !== index))
+  function quitarDocumento(index) {
+    setDocumentos((prev) => prev.filter((_, i) => i !== index))
   }
 
   const filasCalculadas = filas.map((f) => {
@@ -86,19 +95,16 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
           meses: f.calculo.meses,
         }
       })
-      const resultado = await crearPedido(empresa, {
+      await crearPedido(empresa, {
         cliente,
         numeroFactura: numeroFactura.trim(),
         items,
-        archivos: permiteAdjuntos ? archivos : [],
+        documentos: permiteAdjuntos ? documentos : [],
         creadoPor: user.email,
       })
-      if (resultado.adjuntosFallidos > 0) {
-        setError(`El pedido se guardó, pero ${resultado.adjuntosFallidos} archivo(s) no se pudieron subir. Podés reintentar desde el historial.`)
-      }
       setNumeroFactura('')
       setFilas([filaVacia()])
-      setArchivos([])
+      setDocumentos([])
       onSaved?.()
     } catch (err) {
       setError('No se pudo guardar el pedido. Probá de nuevo.')
@@ -190,28 +196,21 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
 
       {permiteAdjuntos && (
         <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Permisos de tránsito (PDF o foto)</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf,image/*"
-            multiple
-            onChange={handleArchivos}
-            className="hidden"
-          />
+          <label className="block text-sm font-medium text-gray-600 mb-1">Permisos de tránsito (desde Drive)</label>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white"
+            onClick={handleElegirDocumentos}
+            disabled={eligiendo}
+            className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white disabled:opacity-40"
           >
-            + Agregar documentos
+            {eligiendo ? 'Abriendo Drive…' : '+ Agregar documentos'}
           </button>
-          {archivos.length > 0 && (
+          {documentos.length > 0 && (
             <ul className="mt-2 grid gap-1">
-              {archivos.map((f, i) => (
-                <li key={`${f.name}-${i}`} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5">
-                  <span className="truncate">{f.name}</span>
-                  <button type="button" onClick={() => quitarArchivo(i)} className="text-red-500 hover:text-red-700 ml-3 shrink-0">✕</button>
+              {documentos.map((d, i) => (
+                <li key={`${d.id}-${i}`} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5">
+                  <span className="truncate">{d.nombre}</span>
+                  <button type="button" onClick={() => quitarDocumento(i)} className="text-red-500 hover:text-red-700 ml-3 shrink-0">✕</button>
                 </li>
               ))}
             </ul>

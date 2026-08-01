@@ -1,49 +1,52 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { adjuntarArchivo, eliminarPedido } from '../services/pedidos'
+import { adjuntarDocumentos, eliminarPedido } from '../services/pedidos'
+import { elegirDocumentosDeDrive } from '../utils/drivePicker'
 import { exportPedidoPdf } from '../utils/pdfExportPedido'
 import { useAuth } from '../contexts/AuthContext'
 
-const MAX_BYTES = 15 * 1024 * 1024
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+const GOOGLE_DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID
 
 function toDate(value) {
   return value?.toDate ? value.toDate() : value
 }
 
-function esUrlDeStorageValida(url) {
-  return typeof url === 'string' && url.startsWith('https://firebasestorage.googleapis.com/')
+function esUrlDeDriveValida(url) {
+  return typeof url === 'string' && url.startsWith('https://drive.google.com/')
 }
 
-function AdjuntarMas({ empresa, pedido, onChange }) {
-  const [subiendo, setSubiendo] = useState(false)
+function AdjuntarMas({ pedido, onChange }) {
+  const [eligiendo, setEligiendo] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > MAX_BYTES) {
-      setError('Pesa más de 15 MB')
-      return
-    }
+  async function handleClick() {
     setError('')
-    setSubiendo(true)
+    setEligiendo(true)
     try {
-      await adjuntarArchivo(empresa, pedido, file)
-      onChange?.()
+      const elegidos = await elegirDocumentosDeDrive({
+        apiKey: GOOGLE_API_KEY,
+        clientId: GOOGLE_CLIENT_ID,
+        folderId: GOOGLE_DRIVE_FOLDER_ID,
+      })
+      if (elegidos.length > 0) {
+        await adjuntarDocumentos(pedido, elegidos)
+        onChange?.()
+      }
     } catch (err) {
-      setError('No se pudo subir')
+      setError('No se pudo abrir Drive')
       console.error(err)
     } finally {
-      setSubiendo(false)
+      setEligiendo(false)
     }
   }
 
   return (
     <div>
-      <label className="text-xs text-orange hover:underline cursor-pointer">
-        {subiendo ? 'Subiendo…' : '+ Adjuntar documento'}
-        <input type="file" accept="application/pdf,image/*" onChange={handleChange} disabled={subiendo} className="hidden" />
-      </label>
+      <button onClick={handleClick} disabled={eligiendo} className="text-xs text-orange hover:underline disabled:opacity-40">
+        {eligiendo ? 'Abriendo Drive…' : '+ Adjuntar documento'}
+      </button>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
@@ -113,12 +116,12 @@ export default function HistorialPedidos({ empresa, pedidos, permiteLote, permit
 
           {permiteAdjuntos && (
             <div className="px-4 py-3 border-t flex flex-wrap items-center gap-3">
-              {(p.adjuntos ?? []).filter((a) => esUrlDeStorageValida(a.url)).map((a, i) => (
+              {(p.adjuntos ?? []).filter((a) => esUrlDeDriveValida(a.url)).map((a, i) => (
                 <a key={i} href={a.url} target="_blank" rel="noreferrer" className="text-sm text-orange hover:underline">
                   📎 {a.nombre}
                 </a>
               ))}
-              <AdjuntarMas empresa={empresa} pedido={p} onChange={onChange} />
+              <AdjuntarMas pedido={p} onChange={onChange} />
             </div>
           )}
         </div>
