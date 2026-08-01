@@ -6,6 +6,11 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email));
     }
 
+    function isAdmin() {
+      return isAuthorized() &&
+        get(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email)).data.admin == true;
+    }
+
     match /usuariosAutorizados/{email} {
       allow read, write: if isAuthorized();
     }
@@ -14,15 +19,19 @@ service cloud.firestore {
       allow read, write: if isAuthorized();
     }
 
-    match /entregas/{entregaId} {
-      allow read, delete: if isAuthorized();
+    match /clientes/{empresa}/items/{clienteId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /pedidos/{pedidoId} {
+      allow read: if isAuthorized();
       allow create: if isAuthorized() &&
         request.resource.data.creadoPor == request.auth.token.email;
-      // Solo el paso de adjuntar el permiso de tránsito actualiza un registro
-      // ya creado — cualquier otro campo (creadoPor, fechas, etc.) queda fijo
-      // después de crearse, para que el registro de auditoría no se pueda alterar.
+      // Solo se puede tocar la lista de adjuntos de un pedido ya creado
+      // (subir un PDF más tarde) — el resto de los campos queda fijo.
       allow update: if isAuthorized() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adjuntoUrl', 'adjuntoNombre']);
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adjuntos']);
+      allow delete: if isAdmin();
     }
   }
 }

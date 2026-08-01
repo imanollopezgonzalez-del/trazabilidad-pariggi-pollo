@@ -8,11 +8,13 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [status, setStatus] = useState('loading')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null)
+        setIsAdmin(false)
         setStatus('signed-out')
         return
       }
@@ -26,6 +28,7 @@ export function AuthProvider({ children }) {
           return
         }
         setUser(firebaseUser)
+        setIsAdmin(authDoc.data().admin === true)
         setStatus('authorized')
       } catch (err) {
         // Si el email todavía no está en la whitelist, las reglas de
@@ -44,7 +47,7 @@ export function AuthProvider({ children }) {
   const logout = () => signOut(auth)
 
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider value={{ user, status, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

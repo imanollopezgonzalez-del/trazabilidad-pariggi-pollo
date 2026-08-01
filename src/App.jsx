@@ -5,8 +5,8 @@ import { seedCatalogoSiVacio } from './services/productos'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import Empresas from './pages/Empresas'
-import Pariggi from './pages/Pariggi'
-import PolloCocido from './pages/PolloCocido'
+import ClienteSelector from './pages/ClienteSelector'
+import Pedidos from './pages/Pedidos'
 import Ajustes from './pages/Ajustes'
 
 function Gate() {
@@ -29,8 +29,16 @@ function Gate() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Empresas />} />
-          <Route path="/pariggi" element={<Pariggi />} />
-          <Route path="/pollococido" element={<PolloCocido />} />
+          <Route path="/pariggi" element={<ClienteSelector empresa="pariggi" />} />
+          <Route
+            path="/pariggi/:clienteId"
+            element={<Pedidos empresa="pariggi" permiteLote={false} permiteAdjuntos={false} mostrarExportarPdf={true} />}
+          />
+          <Route path="/pollococido" element={<ClienteSelector empresa="pollococido" />} />
+          <Route
+            path="/pollococido/:clienteId"
+            element={<Pedidos empresa="pollococido" permiteLote={true} permiteAdjuntos={true} mostrarExportarPdf={false} />}
+          />
           <Route path="/ajustes" element={<Ajustes />} />
         </Route>
       </Routes>

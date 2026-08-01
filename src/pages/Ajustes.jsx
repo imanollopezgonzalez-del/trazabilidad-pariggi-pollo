@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listProductos, addProducto, setProductoActivo } from '../services/productos'
+import { listClientes, addCliente, setClienteActivo } from '../services/clientes'
 import { listUsuariosAutorizados, addUsuarioAutorizado, removeUsuarioAutorizado } from '../services/usuarios'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -9,17 +10,22 @@ export default function Ajustes() {
   const [productos, setProductos] = useState([])
   const [nuevoCodigo, setNuevoCodigo] = useState('')
   const [nuevoNombre, setNuevoNombre] = useState('')
+  const [clientes, setClientes] = useState([])
+  const [nuevoCliente, setNuevoCliente] = useState('')
   const [usuarios, setUsuarios] = useState([])
   const [nuevoEmail, setNuevoEmail] = useState('')
 
   async function reloadProductos() {
     setProductos(await listProductos(empresa))
   }
+  async function reloadClientes() {
+    setClientes(await listClientes(empresa))
+  }
   async function reloadUsuarios() {
     setUsuarios(await listUsuariosAutorizados())
   }
 
-  useEffect(() => { reloadProductos() }, [empresa])
+  useEffect(() => { reloadProductos(); reloadClientes() }, [empresa])
   useEffect(() => { reloadUsuarios() }, [])
 
   async function handleAddProducto(e) {
@@ -29,6 +35,14 @@ export default function Ajustes() {
     setNuevoCodigo('')
     setNuevoNombre('')
     reloadProductos()
+  }
+
+  async function handleAddCliente(e) {
+    e.preventDefault()
+    if (!nuevoCliente.trim()) return
+    await addCliente(empresa, nuevoCliente.trim())
+    setNuevoCliente('')
+    reloadClientes()
   }
 
   async function handleAddUsuario(e) {
@@ -41,12 +55,31 @@ export default function Ajustes() {
 
   return (
     <div className="grid gap-8 max-w-2xl">
+      <div className="flex gap-2">
+        <button onClick={() => setEmpresa('pariggi')} className={`px-3 py-1 rounded-lg text-sm ${empresa === 'pariggi' ? 'bg-orange text-white' : 'bg-white'}`}>Pariggi</button>
+        <button onClick={() => setEmpresa('pollococido')} className={`px-3 py-1 rounded-lg text-sm ${empresa === 'pollococido' ? 'bg-pollo text-white' : 'bg-white'}`}>Pollo Cocido</button>
+      </div>
+
+      <section>
+        <h2 className="font-medium text-dark mb-3">Clientes</h2>
+        <ul className="bg-white rounded-xl shadow divide-y">
+          {clientes.map((c) => (
+            <li key={c.id} className="px-4 py-2 flex justify-between items-center text-sm">
+              <span>{c.nombre}</span>
+              <button onClick={() => setClienteActivo(empresa, c.id, !c.activo).then(reloadClientes)} className="text-xs text-gray-500 hover:underline">
+                {c.activo ? 'Desactivar' : 'Activar'}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <form onSubmit={handleAddCliente} className="flex gap-2 mt-3">
+          <input placeholder="Nombre del cliente" value={nuevoCliente} onChange={(e) => setNuevoCliente(e.target.value)} className="border rounded-lg px-3 py-2 text-sm flex-1" />
+          <button type="submit" className="bg-dark text-white rounded-lg px-4 text-sm">Agregar</button>
+        </form>
+      </section>
+
       <section>
         <h2 className="font-medium text-dark mb-3">Catálogo de productos</h2>
-        <div className="flex gap-2 mb-3">
-          <button onClick={() => setEmpresa('pariggi')} className={`px-3 py-1 rounded-lg text-sm ${empresa === 'pariggi' ? 'bg-orange text-white' : 'bg-white'}`}>Pariggi</button>
-          <button onClick={() => setEmpresa('pollococido')} className={`px-3 py-1 rounded-lg text-sm ${empresa === 'pollococido' ? 'bg-pollo text-white' : 'bg-white'}`}>Pollo Cocido</button>
-        </div>
         <ul className="bg-white rounded-xl shadow divide-y">
           {productos.map((p) => (
             <li key={p.id} className="px-4 py-2 flex justify-between items-center text-sm">
@@ -78,6 +111,7 @@ export default function Ajustes() {
           <input type="email" required placeholder="email@dominio.com" value={nuevoEmail} onChange={(e) => setNuevoEmail(e.target.value)} className="border rounded-lg px-3 py-2 text-sm flex-1" />
           <button type="submit" className="bg-dark text-white rounded-lg px-4 text-sm">Agregar</button>
         </form>
+        <p className="text-xs text-gray-400 mt-2">Para dar permiso de eliminar pedidos a alguien, agregale el campo <code>admin: true</code> al documento en Firestore manualmente — no hay botón para esto todavía.</p>
       </section>
     </div>
   )

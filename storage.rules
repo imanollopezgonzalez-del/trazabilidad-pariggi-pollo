@@ -1,7 +1,7 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /permisos/{empresa}/{entregaId}/{fileName} {
+    match /permisos/{empresa}/{pedidoId}/{fileName} {
       function isAuthorized() {
         return request.auth != null &&
           firestore.exists(/databases/(default)/documents/usuariosAutorizados/$(request.auth.token.email));
@@ -12,6 +12,8 @@ service firebase.storage {
       // lectura evalúa a error y deniega todo, incluido el link "Ver").
       allow read: if isAuthorized();
       allow write: if isAuthorized() && request.resource.size < 15 * 1024 * 1024;
+      allow delete: if request.auth != null &&
+        firestore.get(/databases/(default)/documents/usuariosAutorizados/$(request.auth.token.email)).data.admin == true;
     }
   }
 }
