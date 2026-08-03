@@ -29,16 +29,20 @@ function loadGis() {
   return gisReady
 }
 
-function pedirTokenDeAcceso(clientId) {
+// hint = email del usuario ya logueado en la app, para que Google use
+// directamente esa cuenta en vez de mostrar el selector de todas las
+// cuentas que tenga guardadas el navegador.
+function pedirTokenDeAcceso(clientId, hint) {
   return loadGis().then(
     () =>
       new Promise((resolve, reject) => {
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: SCOPE,
+          hint,
           callback: (resp) => (resp.error ? reject(resp) : resolve(resp.access_token)),
         })
-        tokenClient.requestAccessToken()
+        tokenClient.requestAccessToken({ hint })
       })
   )
 }
@@ -46,9 +50,9 @@ function pedirTokenDeAcceso(clientId) {
 // Abre el selector de Google, limitado a la carpeta compartida del depósito.
 // Devuelve los documentos elegidos como [{ id, nombre, url }] — sin subir
 // ningún byte, el archivo ya vive en Drive, solo guardamos la referencia.
-export async function elegirDocumentosDeDrive({ apiKey, clientId, folderId, multiselect = true }) {
+export async function elegirDocumentosDeDrive({ apiKey, clientId, folderId, email, multiselect = true }) {
   await loadGapiPicker()
-  const accessToken = await pedirTokenDeAcceso(clientId)
+  const accessToken = await pedirTokenDeAcceso(clientId, email)
 
   return new Promise((resolve) => {
     const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)

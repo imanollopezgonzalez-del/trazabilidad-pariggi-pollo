@@ -18,6 +18,7 @@ function esUrlDeDriveValida(url) {
 }
 
 function AdjuntarMas({ pedido, onChange }) {
+  const { user } = useAuth()
   const [eligiendo, setEligiendo] = useState(false)
   const [error, setError] = useState('')
 
@@ -29,6 +30,7 @@ function AdjuntarMas({ pedido, onChange }) {
         apiKey: GOOGLE_API_KEY,
         clientId: GOOGLE_CLIENT_ID,
         folderId: GOOGLE_DRIVE_FOLDER_ID,
+        email: user.email,
       })
       if (elegidos.length > 0) {
         await adjuntarDocumentos(pedido, elegidos)

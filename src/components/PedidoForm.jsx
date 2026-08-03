@@ -49,6 +49,7 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
         apiKey: GOOGLE_API_KEY,
         clientId: GOOGLE_CLIENT_ID,
         folderId: GOOGLE_DRIVE_FOLDER_ID,
+        email: user.email,
       })
       setDocumentos((prev) => [...prev, ...elegidos])
     } catch (err) {
