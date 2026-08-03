@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import logoTrazabilidad from '../assets/logo-trazabilidad.png'
 
 export default function Login() {
   const { status, login } = useAuth()
@@ -20,6 +21,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream px-4">
       <div className="bg-white rounded-xl shadow p-8 max-w-sm w-full text-center">
+        <img src={logoTrazabilidad} alt="" className="h-16 w-16 mx-auto mb-3" />
         <h1 className="text-xl font-semibold text-dark mb-2">Trazabilidad Pariggi / Pollo Cocido</h1>
         <p className="text-sm text-gray-500 mb-6">Ingresá con tu cuenta de Google autorizada.</p>
         {status === 'unauthorized' && (

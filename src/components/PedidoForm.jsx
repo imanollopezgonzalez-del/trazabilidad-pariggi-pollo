@@ -13,12 +13,36 @@ function filaVacia() {
   return { key: crypto.randomUUID(), productoId: '', lote: '', fechaEntrega: '', fechaVencimiento: '' }
 }
 
+function SelectorDeDocumento({ etiqueta, documento, onElegir, onQuitar, eligiendo }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-1">{etiqueta}</label>
+      {documento ? (
+        <div className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5 max-w-sm">
+          <span className="truncate">{documento.nombre}</span>
+          <button type="button" onClick={onQuitar} className="text-red-500 hover:text-red-700 ml-3 shrink-0">✕</button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onElegir}
+          disabled={eligiendo}
+          className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white disabled:opacity-40"
+        >
+          {eligiendo ? 'Abriendo Drive…' : `+ Agregar ${etiqueta}`}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjuntos, onSaved }) {
   const { user } = useAuth()
   const [productos, setProductos] = useState([])
   const [numeroFactura, setNumeroFactura] = useState('')
   const [filas, setFilas] = useState([filaVacia()])
-  const [documentos, setDocumentos] = useState([])
+  const [documentoSenasa, setDocumentoSenasa] = useState(null)
+  const [documentoPermisoTransito, setDocumentoPermisoTransito] = useState(null)
   const [eligiendo, setEligiendo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +65,7 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
     setFilas((prev) => (prev.length > 1 ? prev.filter((f) => f.key !== key) : prev))
   }
 
-  async function handleElegirDocumentos() {
+  async function handleElegirDocumento(setDocumento, etiqueta) {
     setError('')
     setEligiendo(true)
     try {
@@ -50,18 +74,15 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
         clientId: GOOGLE_CLIENT_ID,
         folderId: GOOGLE_DRIVE_FOLDER_ID,
         email: user.email,
+        multiselect: false,
       })
-      setDocumentos((prev) => [...prev, ...elegidos])
+      if (elegidos.length > 0) setDocumento(elegidos[0])
     } catch (err) {
-      setError('No se pudo abrir el selector de Google Drive. Probá de nuevo.')
+      setError(`No se pudo abrir el selector de Drive para ${etiqueta}. Probá de nuevo.`)
       console.error(err)
     } finally {
       setEligiendo(false)
     }
-  }
-
-  function quitarDocumento(index) {
-    setDocumentos((prev) => prev.filter((_, i) => i !== index))
   }
 
   const filasCalculadas = filas.map((f) => {
@@ -100,12 +121,14 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
         cliente,
         numeroFactura: numeroFactura.trim(),
         items,
-        documentos: permiteAdjuntos ? documentos : [],
+        documentoSenasa: permiteAdjuntos ? documentoSenasa : null,
+        documentoPermisoTransito: permiteAdjuntos ? documentoPermisoTransito : null,
         creadoPor: user.email,
       })
       setNumeroFactura('')
       setFilas([filaVacia()])
-      setDocumentos([])
+      setDocumentoSenasa(null)
+      setDocumentoPermisoTransito(null)
       onSaved?.()
     } catch (err) {
       setError('No se pudo guardar el pedido. Probá de nuevo.')
@@ -196,26 +219,21 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
       </button>
 
       {permiteAdjuntos && (
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Permisos de tránsito (desde Drive)</label>
-          <button
-            type="button"
-            onClick={handleElegirDocumentos}
-            disabled={eligiendo}
-            className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white disabled:opacity-40"
-          >
-            {eligiendo ? 'Abriendo Drive…' : '+ Agregar documentos'}
-          </button>
-          {documentos.length > 0 && (
-            <ul className="mt-2 grid gap-1">
-              {documentos.map((d, i) => (
-                <li key={`${d.id}-${i}`} className="flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-1.5">
-                  <span className="truncate">{d.nombre}</span>
-                  <button type="button" onClick={() => quitarDocumento(i)} className="text-red-500 hover:text-red-700 ml-3 shrink-0">✕</button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SelectorDeDocumento
+            etiqueta="SENASA"
+            documento={documentoSenasa}
+            eligiendo={eligiendo}
+            onElegir={() => handleElegirDocumento(setDocumentoSenasa, 'SENASA')}
+            onQuitar={() => setDocumentoSenasa(null)}
+          />
+          <SelectorDeDocumento
+            etiqueta="Permiso de Tránsito"
+            documento={documentoPermisoTransito}
+            eligiendo={eligiendo}
+            onElegir={() => handleElegirDocumento(setDocumentoPermisoTransito, 'Permiso de Tránsito')}
+            onQuitar={() => setDocumentoPermisoTransito(null)}
+          />
         </div>
       )}
 

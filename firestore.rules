@@ -23,14 +23,13 @@ service cloud.firestore {
       allow read, write: if isAuthorized();
     }
 
+    // Los documentos (SENASA / Permiso de Tránsito) se cargan solo al crear
+    // el pedido — no existe una vía de update, así que un pedido ya guardado
+    // no se puede alterar, solo leer o borrar (admin).
     match /pedidos/{pedidoId} {
       allow read: if isAuthorized();
       allow create: if isAuthorized() &&
         request.resource.data.creadoPor == request.auth.token.email;
-      // Solo se puede tocar la lista de adjuntos de un pedido ya creado
-      // (subir un PDF más tarde) — el resto de los campos queda fijo.
-      allow update: if isAuthorized() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adjuntos']);
       allow delete: if isAdmin();
     }
   }

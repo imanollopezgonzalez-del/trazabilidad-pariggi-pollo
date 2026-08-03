@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import logoTrazabilidad from '../assets/logo-trazabilidad.png'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -7,7 +8,10 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-cream">
       <header className="bg-white border-b px-6 py-3 flex items-center justify-between">
-        <Link to="/" className="font-semibold text-dark">Trazabilidad</Link>
+        <Link to="/" className="flex items-center gap-2 font-semibold text-dark">
+          <img src={logoTrazabilidad} alt="" className="h-7 w-7" />
+          Trazabilidad
+        </Link>
         <div className="flex items-center gap-4 text-sm text-gray-500">
           <Link to="/ajustes" className="hover:underline">Ajustes</Link>
           <span>{user?.email}</span>

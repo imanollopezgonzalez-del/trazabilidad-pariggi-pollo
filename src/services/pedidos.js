@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../firebase'
 
 const pedidosRef = collection(db, 'pedidos')
@@ -7,26 +7,22 @@ function toMillis(value) {
   return value?.toDate ? value.toDate().getTime() : value.getTime()
 }
 
-// documentos ya vienen elegidos desde Google Drive (ver drivePicker.js) —
-// no hay subida de archivos, solo se guarda la referencia [{id, nombre, url}].
-export async function crearPedido(empresa, { cliente, numeroFactura, items, documentos = [], creadoPor }) {
+// documentoSenasa/documentoPermisoTransito ya vienen elegidos desde Google
+// Drive (ver drivePicker.js) — no hay subida de archivos, solo se guarda la
+// referencia {id, nombre, url}. Se cargan solo al crear el pedido, no
+// después — por eso no hay ninguna función de "actualizar" acá.
+export async function crearPedido(empresa, { cliente, numeroFactura, items, documentoSenasa = null, documentoPermisoTransito = null, creadoPor }) {
   const docRef = await addDoc(pedidosRef, {
     empresa,
     cliente,
     numeroFactura,
     items,
-    adjuntos: documentos,
+    documentoSenasa,
+    documentoPermisoTransito,
     creadoPor,
     creadoEn: serverTimestamp(),
   })
   return { id: docRef.id }
-}
-
-// Para agregar un documento a un pedido ya guardado.
-export async function adjuntarDocumentos(pedido, nuevosDocumentos) {
-  const adjuntos = [...(pedido.adjuntos ?? []), ...nuevosDocumentos]
-  await updateDoc(doc(db, 'pedidos', pedido.id), { adjuntos })
-  return adjuntos
 }
 
 export async function eliminarPedido(pedido) {

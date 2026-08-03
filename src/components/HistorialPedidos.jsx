@@ -1,13 +1,7 @@
-import { useState } from 'react'
 import { format } from 'date-fns'
-import { adjuntarDocumentos, eliminarPedido } from '../services/pedidos'
-import { elegirDocumentosDeDrive } from '../utils/drivePicker'
+import { eliminarPedido } from '../services/pedidos'
 import { exportPedidoPdf } from '../utils/pdfExportPedido'
 import { useAuth } from '../contexts/AuthContext'
-
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
-const GOOGLE_DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID
 
 function toDate(value) {
   return value?.toDate ? value.toDate() : value
@@ -17,40 +11,14 @@ function esUrlDeDriveValida(url) {
   return typeof url === 'string' && url.startsWith('https://drive.google.com/')
 }
 
-function AdjuntarMas({ pedido, onChange }) {
-  const { user } = useAuth()
-  const [eligiendo, setEligiendo] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleClick() {
-    setError('')
-    setEligiendo(true)
-    try {
-      const elegidos = await elegirDocumentosDeDrive({
-        apiKey: GOOGLE_API_KEY,
-        clientId: GOOGLE_CLIENT_ID,
-        folderId: GOOGLE_DRIVE_FOLDER_ID,
-        email: user.email,
-      })
-      if (elegidos.length > 0) {
-        await adjuntarDocumentos(pedido, elegidos)
-        onChange?.()
-      }
-    } catch (err) {
-      setError('No se pudo abrir Drive')
-      console.error(err)
-    } finally {
-      setEligiendo(false)
-    }
+function DocumentoAdjunto({ etiqueta, documento }) {
+  if (!esUrlDeDriveValida(documento?.url)) {
+    return <span className="text-sm text-gray-400">Sin {etiqueta}</span>
   }
-
   return (
-    <div>
-      <button onClick={handleClick} disabled={eligiendo} className="text-xs text-orange hover:underline disabled:opacity-40">
-        {eligiendo ? 'Abriendo Drive…' : '+ Adjuntar documento'}
-      </button>
-      {error && <p className="text-xs text-red-600">{error}</p>}
-    </div>
+    <a href={documento.url} target="_blank" rel="noreferrer" className="text-sm text-orange hover:underline">
+      📎 {etiqueta}: {documento.nombre}
+    </a>
   )
 }
 
@@ -117,13 +85,9 @@ export default function HistorialPedidos({ empresa, pedidos, permiteLote, permit
           </table>
 
           {permiteAdjuntos && (
-            <div className="px-4 py-3 border-t flex flex-wrap items-center gap-3">
-              {(p.adjuntos ?? []).filter((a) => esUrlDeDriveValida(a.url)).map((a, i) => (
-                <a key={i} href={a.url} target="_blank" rel="noreferrer" className="text-sm text-orange hover:underline">
-                  📎 {a.nombre}
-                </a>
-              ))}
-              <AdjuntarMas pedido={p} onChange={onChange} />
+            <div className="px-4 py-3 border-t flex flex-wrap items-center gap-4">
+              <DocumentoAdjunto etiqueta="SENASA" documento={p.documentoSenasa} />
+              <DocumentoAdjunto etiqueta="Permiso de Tránsito" documento={p.documentoPermisoTransito} />
             </div>
           )}
         </div>
