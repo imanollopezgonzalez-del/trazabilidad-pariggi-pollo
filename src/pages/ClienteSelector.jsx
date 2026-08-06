@@ -1,6 +1,8 @@
+// src/pages/ClienteSelector.jsx
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listClientes, seedClientesSiVacio } from '../services/clientes'
+import { useAuth } from '../contexts/AuthContext'
 import logoCedisur from '../assets/logo-cedisur.jpg'
 import logoGrandwich from '../assets/logo-grandwich.png'
 
@@ -12,11 +14,12 @@ const LOGOS = {
 const NOMBRES_EMPRESA = { pariggi: 'Pastas Pariggi', pollococido: 'Pollo Cocido' }
 
 export default function ClienteSelector({ empresa }) {
+  const { tieneAcceso } = useAuth()
   const [clientes, setClientes] = useState([])
 
   useEffect(() => {
     seedClientesSiVacio(empresa).then(() => listClientes(empresa)).then((items) =>
-      setClientes(items.filter((c) => c.activo))
+      setClientes(items.filter((c) => c.activo && tieneAcceso(empresa, c.id)))
     )
   }, [empresa])
 
@@ -39,7 +42,7 @@ export default function ClienteSelector({ empresa }) {
             <h2 className="text-lg font-semibold text-dark">{c.nombre}</h2>
           </Link>
         ))}
-        {clientes.length === 0 && <p className="text-gray-400">Sin clientes cargados todavía.</p>}
+        {clientes.length === 0 && <p className="text-gray-400">Sin clientes disponibles.</p>}
       </div>
     </div>
   )
