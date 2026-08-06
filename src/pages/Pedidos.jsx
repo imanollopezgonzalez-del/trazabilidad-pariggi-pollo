@@ -29,7 +29,7 @@ export default function Pedidos({ empresa, permiteLote, permiteAdjuntos }) {
 
   async function reload() {
     if (!autorizado || !clienteNombre) return
-    setPedidos(await listPedidos(empresa, clienteNombre))
+    setPedidos(await listPedidos(empresa, clienteNombre, clienteId))
   }
 
   useEffect(() => { reload() }, [clienteNombre])
