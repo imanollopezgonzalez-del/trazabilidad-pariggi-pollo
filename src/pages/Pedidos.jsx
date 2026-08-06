@@ -18,14 +18,17 @@ export default function Pedidos({ empresa, permiteLote, permiteAdjuntos }) {
 
   useEffect(() => {
     if (!autorizado) return
+    let vigente = true
     listClientes(empresa).then((items) => {
+      if (!vigente) return
       const c = items.find((i) => i.id === clienteId)
       setClienteNombre(c?.nombre ?? clienteId)
     })
+    return () => { vigente = false }
   }, [empresa, clienteId, autorizado])
 
   async function reload() {
-    if (!clienteNombre) return
+    if (!autorizado || !clienteNombre) return
     setPedidos(await listPedidos(empresa, clienteNombre))
   }
 
