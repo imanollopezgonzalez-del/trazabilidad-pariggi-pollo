@@ -76,3 +76,31 @@ export async function elegirDocumentosDeDrive({ apiKey, clientId, folderId, emai
     builder.build().setVisible(true)
   })
 }
+
+// A diferencia de elegirDocumentosDeDrive (que lista archivos ya existentes
+// en Drive), esta usa la vista "Subir" del Picker: abre el explorador de
+// archivos del sistema operativo, sube el archivo elegido como hijo de
+// folderId, y devuelve su referencia. Mismo token/scope (drive.file), sin
+// subir bytes por fuera de la API de Drive — no hace falta Firebase Storage.
+export async function subirDocumentoDesdeEquipo({ apiKey, clientId, folderId, email }) {
+  await loadGapiPicker()
+  const accessToken = await pedirTokenDeAcceso(clientId, email)
+
+  return new Promise((resolve) => {
+    const view = new window.google.picker.DocsUploadView().setParentFolder(folderId)
+
+    const builder = new window.google.picker.PickerBuilder()
+      .addView(view)
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(apiKey)
+      .setCallback((data) => {
+        if (data.action === window.google.picker.Action.PICKED) {
+          resolve(data.docs.map((d) => ({ id: d.id, nombre: d.name, url: d.url })))
+        } else if (data.action === window.google.picker.Action.CANCEL) {
+          resolve([])
+        }
+      })
+
+    builder.build().setVisible(true)
+  })
+}
