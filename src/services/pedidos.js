@@ -7,18 +7,24 @@ function toMillis(value) {
   return value?.toDate ? value.toDate().getTime() : value.getTime()
 }
 
-// documentoSenasa/documentoPermisoTransito ya vienen elegidos desde Google
-// Drive (ver drivePicker.js) — no hay subida de archivos, solo se guarda la
-// referencia {id, nombre, url}. Se cargan solo al crear el pedido, no
-// después — por eso no hay ninguna función de "actualizar" acá.
-export async function crearPedido(empresa, { cliente, numeroFactura, items, documentoSenasa = null, documentoPermisoTransito = null, creadoPor }) {
+// documentoSenasa/documentoPermisoTransito vienen elegidos desde la carpeta
+// compartida de Drive (ver elegirDocumentosDeDrive en drivePicker.js);
+// documentoFactura se sube desde el equipo a una carpeta de Drive aparte
+// (ver subirDocumentoDesdeEquipo). En los tres casos lo único que se
+// persiste acá es la referencia {id, nombre, url} ya resuelta — no hay
+// subida de bytes en este archivo. clienteId (a diferencia de cliente, que
+// es el nombre para mostrar) es el id usado por firestore.rules para
+// chequear el acceso del creador.
+export async function crearPedido(empresa, { cliente, clienteId, numeroFactura, items, documentoSenasa = null, documentoPermisoTransito = null, documentoFactura = null, creadoPor }) {
   const docRef = await addDoc(pedidosRef, {
     empresa,
     cliente,
+    clienteId,
     numeroFactura,
     items,
     documentoSenasa,
     documentoPermisoTransito,
+    documentoFactura,
     creadoPor,
     creadoEn: serverTimestamp(),
   })
