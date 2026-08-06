@@ -1,20 +1,22 @@
+// src/contexts/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../firebase'
+import { esAdmin, puedeCrear as puedeCrearUsuario, tieneAcceso as tieneAccesoUsuario, tieneAlgunAcceso as tieneAlgunAccesoUsuario } from '../lib/acceso'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [status, setStatus] = useState('loading')
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [usuario, setUsuario] = useState(null)
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null)
-        setIsAdmin(false)
+        setUsuario(null)
         setStatus('signed-out')
         return
       }
@@ -28,7 +30,7 @@ export function AuthProvider({ children }) {
           return
         }
         setUser(firebaseUser)
-        setIsAdmin(authDoc.data().admin === true)
+        setUsuario(authDoc.data())
         setStatus('authorized')
       } catch (err) {
         // Si el email todavía no está en la whitelist, las reglas de
@@ -46,11 +48,18 @@ export function AuthProvider({ children }) {
   const login = () => signInWithPopup(auth, googleProvider)
   const logout = () => signOut(auth)
 
-  return (
-    <AuthContext.Provider value={{ user, status, isAdmin, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  const value = {
+    user,
+    status,
+    login,
+    logout,
+    isAdmin: esAdmin(usuario),
+    puedeCrear: puedeCrearUsuario(usuario),
+    tieneAcceso: (empresa, clienteId) => tieneAccesoUsuario(usuario, empresa, clienteId),
+    tieneAlgunAcceso: (empresa) => tieneAlgunAccesoUsuario(usuario, empresa),
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
