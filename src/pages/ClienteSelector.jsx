@@ -14,14 +14,20 @@ const LOGOS = {
 const NOMBRES_EMPRESA = { pariggi: 'Pastas Pariggi', pollococido: 'Pollo Cocido' }
 
 export default function ClienteSelector({ empresa }) {
-  const { tieneAcceso } = useAuth()
+  const { tieneAcceso, tieneAlgunAcceso } = useAuth()
   const [clientes, setClientes] = useState([])
+  const autorizado = tieneAlgunAcceso(empresa)
 
   useEffect(() => {
+    if (!autorizado) return
     seedClientesSiVacio(empresa).then(() => listClientes(empresa)).then((items) =>
       setClientes(items.filter((c) => c.activo && tieneAcceso(empresa, c.id)))
     )
-  }, [empresa])
+  }, [empresa, autorizado])
+
+  if (!autorizado) {
+    return <p className="text-gray-500">No tenés acceso a esta empresa.</p>
+  }
 
   return (
     <div>
