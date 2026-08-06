@@ -1,34 +1,58 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function usuario() {
+      return get(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email)).data;
+    }
+
     function isAuthorized() {
       return request.auth != null &&
         exists(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email));
     }
 
     function isAdmin() {
-      return isAuthorized() &&
-        get(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email)).data.admin == true;
+      return isAuthorized() && usuario().rol == 'admin';
+    }
+
+    function puedeCrear() {
+      return isAuthorized() && usuario().rol in ['admin', 'edicion'];
+    }
+
+    function tieneAcceso(empresa, clienteId) {
+      let u = usuario();
+      return u.rol == 'admin' ||
+        (('acceso' in u) && (empresa in u.acceso) &&
+          (u.acceso[empresa].todas == true ||
+            (('clientes' in u.acceso[empresa]) && clienteId in u.acceso[empresa].clientes)));
     }
 
     match /usuariosAutorizados/{email} {
-      allow read, write: if isAuthorized();
+      allow read: if isAuthorized();
+      allow write: if isAdmin();
     }
 
     match /productos/{empresa}/items/{productoId} {
-      allow read, write: if isAuthorized();
-    }
-
-    match /clientes/{empresa}/items/{clienteId} {
-      allow read, write: if isAuthorized();
-    }
-
-    // Los documentos (SENASA / Permiso de Tránsito) se cargan solo al crear
-    // el pedido — no existe una vía de update, así que un pedido ya guardado
-    // no se puede alterar, solo leer o borrar (admin).
-    match /pedidos/{pedidoId} {
       allow read: if isAuthorized();
-      allow create: if isAuthorized() &&
+      allow write: if isAdmin();
+    }
+
+    // A diferencia de productos (catálogo compartido sin dueño de cliente),
+    // cada documento acá ES un cliente puntual — se puede chequear tieneAcceso
+    // por documento, igual que en pedidos, para que un usuario con acceso
+    // restringido no pueda enumerar los clientes de una empresa fuera de su
+    // acceso navegando la URL directamente.
+    match /clientes/{empresa}/items/{clienteId} {
+      allow read: if isAuthorized() && tieneAcceso(empresa, clienteId);
+      allow write: if isAdmin();
+    }
+
+    // Los documentos (SENASA / Permiso de Tránsito / Factura) se cargan solo
+    // al crear el pedido — no existe una vía de update, así que un pedido ya
+    // guardado no se puede alterar, solo leer o borrar (admin).
+    match /pedidos/{pedidoId} {
+      allow read: if isAuthorized() && tieneAcceso(resource.data.empresa, resource.data.clienteId);
+      allow create: if puedeCrear() &&
+        tieneAcceso(request.resource.data.empresa, request.resource.data.clienteId) &&
         request.resource.data.creadoPor == request.auth.token.email;
       allow delete: if isAdmin();
     }
