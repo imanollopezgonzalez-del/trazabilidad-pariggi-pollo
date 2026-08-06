@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { calcDiasMeses } from '../lib/trazabilidad'
 import { listProductos } from '../services/productos'
 import { crearPedido } from '../services/pedidos'
-import { elegirDocumentosDeDrive, subirDocumentoDesdeEquipo } from '../utils/drivePicker'
+import { elegirDocumentosDeDrive } from '../utils/drivePicker'
 import { useAuth } from '../contexts/AuthContext'
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
@@ -67,43 +67,24 @@ export default function PedidoForm({ empresa, cliente, clienteId, permiteLote, p
     setFilas((prev) => (prev.length > 1 ? prev.filter((f) => f.key !== key) : prev))
   }
 
-  async function handleElegirDocumento(setDocumento, etiqueta) {
+  async function handleElegirDocumento(setDocumento, etiqueta, folderId = GOOGLE_DRIVE_FOLDER_ID) {
     setError('')
+    if (!folderId) {
+      setError(`Falta configurar la carpeta de Drive para ${etiqueta}. Avisá al administrador.`)
+      return
+    }
     setEligiendo(true)
     try {
       const elegidos = await elegirDocumentosDeDrive({
         apiKey: GOOGLE_API_KEY,
         clientId: GOOGLE_CLIENT_ID,
-        folderId: GOOGLE_DRIVE_FOLDER_ID,
+        folderId,
         email: user.email,
         multiselect: false,
       })
       if (elegidos.length > 0) setDocumento(elegidos[0])
     } catch (err) {
       setError(`No se pudo abrir el selector de Drive para ${etiqueta}. Probá de nuevo.`)
-      console.error(err)
-    } finally {
-      setEligiendo(false)
-    }
-  }
-
-  async function handleSubirFactura() {
-    setError('')
-    if (!GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH) {
-      setError('Falta configurar la carpeta de Drive para facturas. Avisá al administrador.')
-      return
-    }
-    setEligiendo(true)
-    try {
-      const subidos = await subirDocumentoDesdeEquipo({
-        apiKey: GOOGLE_API_KEY,
-        clientId: GOOGLE_CLIENT_ID,
-        folderId: GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH,
-        email: user.email,
-      })
-      if (subidos.length > 0) setDocumentoFactura(subidos[0])
-    } catch (err) {
-      setError('No se pudo subir la factura. Probá de nuevo.')
       console.error(err)
     } finally {
       setEligiendo(false)
@@ -272,7 +253,7 @@ export default function PedidoForm({ empresa, cliente, clienteId, permiteLote, p
               etiqueta="Factura"
               documento={documentoFactura}
               eligiendo={eligiendo}
-              onElegir={handleSubirFactura}
+              onElegir={() => handleElegirDocumento(setDocumentoFactura, 'Factura', GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH)}
               onQuitar={() => setDocumentoFactura(null)}
             />
           )}
