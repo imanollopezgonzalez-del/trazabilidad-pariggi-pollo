@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { calcDiasMeses } from '../lib/trazabilidad'
 import { listProductos } from '../services/productos'
 import { crearPedido } from '../services/pedidos'
-import { elegirDocumentosDeDrive } from '../utils/drivePicker'
+import { elegirDocumentosDeDrive, subirDocumentoDesdeEquipo } from '../utils/drivePicker'
 import { useAuth } from '../contexts/AuthContext'
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const GOOGLE_DRIVE_FOLDER_ID = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID
+const GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH = import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH
 
 function filaVacia() {
   return { key: crypto.randomUUID(), productoId: '', lote: '', fechaEntrega: '', fechaVencimiento: '' }
@@ -29,20 +30,21 @@ function SelectorDeDocumento({ etiqueta, documento, onElegir, onQuitar, eligiend
           disabled={eligiendo}
           className="text-sm border border-orange text-orange rounded-lg px-4 py-2 hover:bg-orange hover:text-white disabled:opacity-40"
         >
-          {eligiendo ? 'Abriendo Drive…' : `+ Agregar ${etiqueta}`}
+          {eligiendo ? 'Abriendo…' : `+ Agregar ${etiqueta}`}
         </button>
       )}
     </div>
   )
 }
 
-export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjuntos, onSaved }) {
+export default function PedidoForm({ empresa, cliente, clienteId, permiteLote, permiteAdjuntos, permiteFactura, onSaved }) {
   const { user } = useAuth()
   const [productos, setProductos] = useState([])
   const [numeroFactura, setNumeroFactura] = useState('')
   const [filas, setFilas] = useState([filaVacia()])
   const [documentoSenasa, setDocumentoSenasa] = useState(null)
   const [documentoPermisoTransito, setDocumentoPermisoTransito] = useState(null)
+  const [documentoFactura, setDocumentoFactura] = useState(null)
   const [eligiendo, setEligiendo] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -85,6 +87,25 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
     }
   }
 
+  async function handleSubirFactura() {
+    setError('')
+    setEligiendo(true)
+    try {
+      const subidos = await subirDocumentoDesdeEquipo({
+        apiKey: GOOGLE_API_KEY,
+        clientId: GOOGLE_CLIENT_ID,
+        folderId: GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH,
+        email: user.email,
+      })
+      if (subidos.length > 0) setDocumentoFactura(subidos[0])
+    } catch (err) {
+      setError('No se pudo subir la factura. Probá de nuevo.')
+      console.error(err)
+    } finally {
+      setEligiendo(false)
+    }
+  }
+
   const filasCalculadas = filas.map((f) => {
     const entregaDate = f.fechaEntrega ? new Date(f.fechaEntrega + 'T00:00:00') : null
     const vencimientoDate = f.fechaVencimiento ? new Date(f.fechaVencimiento + 'T00:00:00') : null
@@ -119,16 +140,19 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
       })
       await crearPedido(empresa, {
         cliente,
+        clienteId,
         numeroFactura: numeroFactura.trim(),
         items,
         documentoSenasa: permiteAdjuntos ? documentoSenasa : null,
         documentoPermisoTransito: permiteAdjuntos ? documentoPermisoTransito : null,
+        documentoFactura: permiteFactura ? documentoFactura : null,
         creadoPor: user.email,
       })
       setNumeroFactura('')
       setFilas([filaVacia()])
       setDocumentoSenasa(null)
       setDocumentoPermisoTransito(null)
+      setDocumentoFactura(null)
       onSaved?.()
     } catch (err) {
       setError('No se pudo guardar el pedido. Probá de nuevo.')
@@ -218,22 +242,36 @@ export default function PedidoForm({ empresa, cliente, permiteLote, permiteAdjun
         + Agregar otro producto
       </button>
 
-      {permiteAdjuntos && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SelectorDeDocumento
-            etiqueta="SENASA"
-            documento={documentoSenasa}
-            eligiendo={eligiendo}
-            onElegir={() => handleElegirDocumento(setDocumentoSenasa, 'SENASA')}
-            onQuitar={() => setDocumentoSenasa(null)}
-          />
-          <SelectorDeDocumento
-            etiqueta="Permiso de Tránsito"
-            documento={documentoPermisoTransito}
-            eligiendo={eligiendo}
-            onElegir={() => handleElegirDocumento(setDocumentoPermisoTransito, 'Permiso de Tránsito')}
-            onQuitar={() => setDocumentoPermisoTransito(null)}
-          />
+      {(permiteAdjuntos || permiteFactura) && (
+        <div className="border rounded-lg p-4 grid gap-3">
+          <h3 className="text-sm font-semibold text-dark">Documentos</h3>
+          {permiteAdjuntos && (
+            <>
+              <SelectorDeDocumento
+                etiqueta="SENASA"
+                documento={documentoSenasa}
+                eligiendo={eligiendo}
+                onElegir={() => handleElegirDocumento(setDocumentoSenasa, 'SENASA')}
+                onQuitar={() => setDocumentoSenasa(null)}
+              />
+              <SelectorDeDocumento
+                etiqueta="Permiso de Tránsito"
+                documento={documentoPermisoTransito}
+                eligiendo={eligiendo}
+                onElegir={() => handleElegirDocumento(setDocumentoPermisoTransito, 'Permiso de Tránsito')}
+                onQuitar={() => setDocumentoPermisoTransito(null)}
+              />
+            </>
+          )}
+          {permiteFactura && (
+            <SelectorDeDocumento
+              etiqueta="Factura"
+              documento={documentoFactura}
+              eligiendo={eligiendo}
+              onElegir={handleSubirFactura}
+              onQuitar={() => setDocumentoFactura(null)}
+            />
+          )}
         </div>
       )}
 
