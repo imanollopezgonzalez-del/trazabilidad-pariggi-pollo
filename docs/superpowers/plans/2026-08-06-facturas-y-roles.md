@@ -1373,6 +1373,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Se probó escopar esto por tieneAcceso(empresa, clienteId), igual que
+    // pedidos — pero listClientes(empresa) (services/clientes.js) hace un
+    // getDocs() de toda la colección sin filtrar por clienteId, y Firestore
+    // deniega la LISTA ENTERA (no filtra doc por doc) cuando la regla
+    // depende de un campo que la query no acota con un where — hubiera roto
+    // el selector de cliente para cualquier usuario no-admin. Dado que
+    // clientes solo tiene nombres (no es información sensible) y que
+    // ClienteSelector.jsx ya bloquea el fetch completo cuando el usuario no
+    // tiene ningún acceso a la empresa, se deja sin escopar acá.
     match /clientes/{empresa}/items/{clienteId} {
       allow read: if isAuthorized();
       allow write: if isAdmin();
@@ -1381,6 +1390,11 @@ service cloud.firestore {
     // Los documentos (SENASA / Permiso de Tránsito / Factura) se cargan solo
     // al crear el pedido — no existe una vía de update, así que un pedido ya
     // guardado no se puede alterar, solo leer o borrar (admin).
+    //
+    // listPedidos (services/pedidos.js) DEBE filtrar por clienteId (no solo
+    // por cliente, el nombre para mostrar) para que esta regla de lectura
+    // funcione para usuarios no-admin — mismo motivo que en clientes de
+    // arriba: sin ese where, Firestore deniega la lista completa.
     match /pedidos/{pedidoId} {
       allow read: if isAuthorized() && tieneAcceso(resource.data.empresa, resource.data.clienteId);
       allow create: if puedeCrear() &&
