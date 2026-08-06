@@ -22,7 +22,7 @@ function DocumentoAdjunto({ etiqueta, documento }) {
   )
 }
 
-export default function HistorialPedidos({ empresa, pedidos, permiteLote, permiteAdjuntos, onChange }) {
+export default function HistorialPedidos({ empresa, pedidos, permiteLote, permiteAdjuntos, permiteFactura, onChange }) {
   const { isAdmin } = useAuth()
 
   async function handleEliminar(pedido) {
@@ -84,10 +84,16 @@ export default function HistorialPedidos({ empresa, pedidos, permiteLote, permit
             </tbody>
           </table>
 
-          {permiteAdjuntos && (
-            <div className="px-4 py-3 border-t flex flex-wrap items-center gap-4">
-              <DocumentoAdjunto etiqueta="SENASA" documento={p.documentoSenasa} />
-              <DocumentoAdjunto etiqueta="Permiso de Tránsito" documento={p.documentoPermisoTransito} />
+          {(permiteAdjuntos || permiteFactura) && (
+            <div className="px-4 py-3 border-t grid gap-2">
+              <h3 className="text-xs font-semibold text-gray-500">Documentos</h3>
+              {permiteAdjuntos && (
+                <>
+                  <DocumentoAdjunto etiqueta="SENASA" documento={p.documentoSenasa} />
+                  <DocumentoAdjunto etiqueta="Permiso de Tránsito" documento={p.documentoPermisoTransito} />
+                </>
+              )}
+              {permiteFactura && <DocumentoAdjunto etiqueta="Factura" documento={p.documentoFactura} />}
             </div>
           )}
         </div>
