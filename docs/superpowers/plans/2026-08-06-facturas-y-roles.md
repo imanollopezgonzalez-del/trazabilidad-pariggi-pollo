@@ -925,7 +925,6 @@ export default function ClienteSelector({ empresa }) {
     seedClientesSiVacio(empresa).then(() => listClientes(empresa)).then((items) =>
       setClientes(items.filter((c) => c.activo && tieneAcceso(empresa, c.id)))
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa])
 
   return (
@@ -1159,7 +1158,6 @@ export default function Ajustes() {
     if (!isAdmin) return
     reloadProductos()
     reloadClientes()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa, isAdmin])
 
   useEffect(() => {
@@ -1168,7 +1166,6 @@ export default function Ajustes() {
     Promise.all(EMPRESAS.map((e) => listClientes(e))).then(([pariggi, pollococido]) =>
       setClientesPorEmpresa({ pariggi, pollococido })
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin])
 
   async function handleAddProducto(e) {
