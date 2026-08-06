@@ -22,7 +22,7 @@ service cloud.firestore {
       let u = usuario();
       return u.rol == 'admin' ||
         (('acceso' in u) && (empresa in u.acceso) &&
-          (u.acceso[empresa].todas == true ||
+          ((('todas' in u.acceso[empresa]) && u.acceso[empresa].todas == true) ||
             (('clientes' in u.acceso[empresa]) && clienteId in u.acceso[empresa].clientes)));
     }
 

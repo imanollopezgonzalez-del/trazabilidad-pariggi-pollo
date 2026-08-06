@@ -89,6 +89,10 @@ export default function PedidoForm({ empresa, cliente, clienteId, permiteLote, p
 
   async function handleSubirFactura() {
     setError('')
+    if (!GOOGLE_DRIVE_FOLDER_ID_FACTURAS_GRANDWICH) {
+      setError('Falta configurar la carpeta de Drive para facturas. Avisá al administrador.')
+      return
+    }
     setEligiendo(true)
     try {
       const subidos = await subirDocumentoDesdeEquipo({

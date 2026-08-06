@@ -37,8 +37,8 @@ export async function eliminarPedido(pedido) {
 
 // Sin orderBy en la query: un where + orderBy sobre campos distintos exige un
 // índice compuesto en Firestore. Se ordena en cliente en su lugar.
-export async function listPedidos(empresa, cliente, clienteId) {
-  const q = query(pedidosRef, where('empresa', '==', empresa), where('cliente', '==', cliente), where('clienteId', '==', clienteId))
+export async function listPedidos(empresa, clienteId) {
+  const q = query(pedidosRef, where('empresa', '==', empresa), where('clienteId', '==', clienteId))
   const snap = await getDocs(q)
   const pedidos = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
   pedidos.sort((a, b) => toMillis(b.creadoEn ?? new Date(0)) - toMillis(a.creadoEn ?? new Date(0)))

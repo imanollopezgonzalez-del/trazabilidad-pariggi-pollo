@@ -94,6 +94,10 @@ export default function Ajustes() {
   async function handleAddUsuario(evento) {
     evento.preventDefault()
     if (!nuevoEmail.trim()) return
+    if (nuevoEmail.trim().toLowerCase() === user.email.toLowerCase() && nuevoRol !== 'admin') {
+      alert('No podés cambiar tu propio rol de administrador desde acá.')
+      return
+    }
     const acceso = {}
     for (const empresaId of EMPRESAS) {
       const permiso = nuevoAcceso[empresaId]
@@ -165,7 +169,9 @@ export default function Ajustes() {
                 {u.email}
                 <span className="text-xs text-gray-400 ml-2">{u.rol} — {resumenAcceso(u)}</span>
               </span>
-              <button onClick={() => removeUsuarioAutorizado(u.email).then(reloadUsuarios)} className="text-xs text-red-500 hover:underline">Quitar</button>
+              {u.email.toLowerCase() !== user.email.toLowerCase() && (
+                <button onClick={() => removeUsuarioAutorizado(u.email).then(reloadUsuarios)} className="text-xs text-red-500 hover:underline">Quitar</button>
+              )}
             </li>
           ))}
         </ul>
