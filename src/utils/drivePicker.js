@@ -87,7 +87,7 @@ export async function subirDocumentoDesdeEquipo({ apiKey, clientId, folderId, em
   const accessToken = await pedirTokenDeAcceso(clientId, email)
 
   return new Promise((resolve) => {
-    const view = new window.google.picker.DocsUploadView().setParentFolder(folderId)
+    const view = new window.google.picker.DocsUploadView().setParent(folderId)
 
     const builder = new window.google.picker.PickerBuilder()
       .addView(view)
