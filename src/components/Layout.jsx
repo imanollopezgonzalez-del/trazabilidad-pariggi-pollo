@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import logoTrazabilidad from '../assets/logo-trazabilidad.png'
 
 export default function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
 
   return (
     <div className="min-h-screen bg-cream">
@@ -13,7 +13,7 @@ export default function Layout() {
           Trazabilidad
         </Link>
         <div className="flex items-center gap-4 text-sm text-gray-500">
-          <Link to="/ajustes" className="hover:underline">Ajustes</Link>
+          {isAdmin && <Link to="/ajustes" className="hover:underline">Ajustes</Link>}
           <span>{user?.email}</span>
           <button onClick={logout} className="text-orange hover:underline">Salir</button>
         </div>
